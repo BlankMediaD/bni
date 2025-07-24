@@ -135,6 +135,7 @@
                 <div class="lg:col-span-1">
                     <h2 class="text-2xl font-bold mb-4">Manage Events & Expenses</h2>
                     <div class="mb-6"><h3 class="text-lg font-semibold mb-2">Add New Event</h3><form id="admin-event-form" class="space-y-4"><div><label for="event-name" class="block text-sm font-medium text-gray-700">Event Name</label><input type="text" id="event-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., Annual Picnic"></div><div><label for="event-amount" class="block text-sm font-medium text-gray-700">Amount Due (INR)</label><input type="number" id="event-amount" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 2000"></div><button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">Add Event</button></form></div>
+                    <div><h3 class="text-lg font-semibold mb-2">Existing Events</h3><div id="event-list" class="space-y-2 max-h-96 overflow-y-auto"></div></div>
                     <div><h3 class="text-lg font-semibold mb-2">Add Expense</h3><form id="add-expense-form" class="space-y-4"><div><label for="expense-name" class="block text-sm font-medium text-gray-700">Expense Name</label><input type="text" id="expense-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div><div><label for="expense-amount" class="block text-sm font-medium text-gray-700">Amount (INR)</label><input type="number" id="expense-amount" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div><div><label for="expense-date" class="block text-sm font-medium text-gray-700">Date</label><input type="date" id="expense-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div><div><label for="expense-comment" class="block text-sm font-medium text-gray-700">Comment</label><textarea id="expense-comment" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea></div><button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700">Add Expense</button></form></div>
                 </div>
                 <div class="lg:col-span-1">
@@ -238,6 +239,43 @@
             $('#expenses-log-table').on('click', '.edit-expense-btn', handleEditExpenseClick);
             $('#expenses-log-table').on('click', '.save-expense-btn', handleSaveExpenseClick);
             $('#expenses-log-table').on('click', '.delete-expense-btn', handleDeleteExpenseClick);
+            $('#event-list').on('click', '.edit-event-btn', handleEditEventClick);
+            $('#event-list').on('click', '.save-event-btn', handleSaveEventClick);
+            $('#event-list').on('click', '.delete-event-btn', handleDeleteEventClick);
+        }
+
+        function handleEditEventClick() {
+            const container = $(this).closest('.flex');
+            const name = container.find('p.font-semibold').text();
+            const amount = parseFloat(container.find('p.text-xs').text().replace(/[^0-9.-]+/g,""));
+            container.find('div').eq(0).html(`
+                <input type="text" value="${name}" class="border p-1 w-full event-name-input">
+                <input type="number" value="${amount}" class="border p-1 w-full event-amount-input">
+            `);
+            container.find('.edit-event-btn').addClass('hidden');
+            container.find('.delete-event-btn').addClass('hidden');
+            container.find('.save-event-btn').removeClass('hidden');
+        }
+
+        async function handleSaveEventClick() {
+            const container = $(this).closest('.flex');
+            const index = $(this).data('index');
+            const name = container.find('.event-name-input').val();
+            const amount = parseFloat(container.find('.event-amount-input').val());
+            const success = await sendAction('editEvent', { index, event: { name, amount } });
+            if (success) {
+                showModal('Success', 'Event updated successfully.');
+            }
+        }
+
+        function handleDeleteEventClick() {
+            const index = $(this).data('index');
+            showConfirmModal('Delete Event', 'Are you sure you want to delete this event?', async () => {
+                const success = await sendAction('deleteEvent', { index });
+                if (success) {
+                    showModal('Success', 'Event deleted successfully.');
+                }
+            });
         }
 
         function handleEditExpenseClick() {
@@ -324,6 +362,7 @@
             if (!appData.members) return;
             populateAllDropdowns();
             renderAdminMemberList();
+            renderAdminEventList();
             renderMonthlyPaymentsTable();
             renderExtraPaymentsTable();
             renderExpensesTable();
@@ -457,6 +496,23 @@
                         <p class="text-xs text-gray-500">${member.email}</p>
                     </div>
                     <button data-name="${member.name}" class="remove-member-btn text-red-500 hover:text-red-700 font-bold">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminEventList() {
+            const container = document.getElementById('event-list');
+            container.innerHTML = appData.extraPayments.map((event, index) => `
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                    <div>
+                        <p class="font-semibold">${event.name}</p>
+                        <p class="text-xs text-gray-500">${formatCurrency(event.amount)}</p>
+                    </div>
+                    <div>
+                        <button data-index="${index}" class="edit-event-btn text-blue-500 hover:text-blue-700 font-bold mr-2">Edit</button>
+                        <button data-index="${index}" class="delete-event-btn text-red-500 hover:text-red-700 font-bold">Delete</button>
+                        <button data-index="${index}" class="save-event-btn text-green-500 hover:text-green-700 font-bold hidden">Save</button>
+                    </div>
                 </div>
             `).join('');
         }

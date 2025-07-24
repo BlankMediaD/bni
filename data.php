@@ -156,6 +156,18 @@ if ($method === 'GET') {
             $saveRequired = true;
             break;
 
+        case 'editEvent':
+            $index = $payload['index'];
+            $data['extraPayments'][$index] = $payload['event'];
+            $saveRequired = true;
+            break;
+
+        case 'deleteEvent':
+            $index = $payload['index'];
+            array_splice($data['extraPayments'], $index, 1);
+            $saveRequired = true;
+            break;
+
         case 'updateAllFees':
             $data['monthlyPayments'] = $payload;
             $saveRequired = true;
