@@ -235,6 +235,49 @@
             document.getElementById('member-list').addEventListener('click', handleMemberListClick);
             ['monthly-member-name', 'month'].forEach(id => document.getElementById(id).addEventListener('change', showMonthlyPaymentHistory));
             ['extra-member-name', 'extra-payment-for'].forEach(id => document.getElementById(id).addEventListener('change', showExtraPaymentHistory));
+            $('#expenses-log-table').on('click', '.edit-expense-btn', handleEditExpenseClick);
+            $('#expenses-log-table').on('click', '.save-expense-btn', handleSaveExpenseClick);
+            $('#expenses-log-table').on('click', '.delete-expense-btn', handleDeleteExpenseClick);
+        }
+
+        function handleEditExpenseClick() {
+            const row = $(this).closest('tr');
+            row.find('td').each(function(index) {
+                if (index < 4) {
+                    const text = $(this).text();
+                    $(this).html(`<input type="text" value="${text}" class="border p-1 w-full">`);
+                }
+            });
+            row.find('.edit-expense-btn').addClass('hidden');
+            row.find('.delete-expense-btn').addClass('hidden');
+            row.find('.save-expense-btn').removeClass('hidden');
+        }
+
+        async function handleSaveExpenseClick() {
+            const row = $(this).closest('tr');
+            const index = $(this).data('index');
+            const originalExpense = appData.expenses[index];
+            const updatedExpense = {
+                date: row.find('input').eq(0).val(),
+                name: row.find('input').eq(1).val(),
+                amount: parseFloat(row.find('input').eq(2).val().replace(/[^0-9.-]+/g,"")),
+                comment: row.find('input').eq(3).val()
+            };
+
+            const success = await sendAction('editExpense', { index, updatedExpense });
+            if (success) {
+                showModal('Success', 'Expense updated successfully.');
+            }
+        }
+
+        function handleDeleteExpenseClick() {
+            const index = $(this).data('index');
+            showConfirmModal('Delete Expense', 'Are you sure you want to delete this expense?', async () => {
+                const success = await sendAction('deleteExpense', { index });
+                if (success) {
+                    showModal('Success', 'Expense deleted successfully.');
+                }
+            });
         }
 
         function openTab(event, tabName) {
@@ -391,9 +434,17 @@
         
         function renderExpensesTable() {
             const expenses = appData.expenses || [];
-            const data = expenses.map(e => [new Date(e.date).toLocaleDateString(), e.name, formatCurrency(e.amount), e.comment]);
+            const data = expenses.map((e, index) => [
+                new Date(e.date).toLocaleDateString(),
+                e.name,
+                formatCurrency(e.amount),
+                e.comment,
+                `<button class="edit-expense-btn bg-blue-500 text-white px-2 py-1 rounded" data-index="${index}">Edit</button>
+                 <button class="delete-expense-btn bg-red-500 text-white px-2 py-1 rounded" data-index="${index}">Delete</button>
+                 <button class="save-expense-btn bg-green-500 text-white px-2 py-1 rounded hidden" data-index="${index}">Save</button>`
+            ]);
             renderDataTable('expenses-log-table', [
-                { title: "Date" }, { title: "Expense" }, { title: "Amount" }, { title: "Comment" }
+                { title: "Date" }, { title: "Expense" }, { title: "Amount" }, { title: "Comment" }, { title: "Actions" }
             ], data);
         }
         

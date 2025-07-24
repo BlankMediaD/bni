@@ -139,6 +139,18 @@ if ($method === 'GET') {
             $saveRequired = true;
             break;
 
+        case 'editExpense':
+            $index = $payload['index'];
+            $data['expenses'][$index] = $payload['updatedExpense'];
+            $saveRequired = true;
+            break;
+
+        case 'deleteExpense':
+            $index = $payload['index'];
+            array_splice($data['expenses'], $index, 1);
+            $saveRequired = true;
+            break;
+
         case 'addEvent':
             $data['extraPayments'][] = $payload;
             $saveRequired = true;
