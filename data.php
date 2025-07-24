@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 
 // Define the path to your data file
 $dataFile = 'data.json';
+$membersFile = 'members.json';
 
 // --- Function to get the current data from the file ---
 function getData($filePath) {
@@ -32,11 +33,6 @@ function getInitialData() {
     }
 
     return [
-        'members' => [
-            ['name' => 'Amit Kumar', 'email' => 'amit.k@example.com'],
-            ['name' => 'Priya Sharma', 'email' => 'priya.s@example.com'],
-            ['name' => 'Rahul Verma', 'email' => 'rahul.v@example.com']
-        ],
         'extraPayments' => [['name' => 'Diwali Celebration', 'amount' => 500], ['name' => 'New Year Party', 'amount' => 750]],
         'monthlyPayments' => $monthlyPayments,
         'monthlyPaymentDetails' => [],
@@ -51,6 +47,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'GET') {
     // --- READ DATA ---
     $data = getData($dataFile);
+    $members = json_decode(file_get_contents($membersFile), true);
+    $data['members'] = $members;
     echo json_encode($data);
 
 } elseif ($method === 'POST') {
@@ -65,12 +63,15 @@ if ($method === 'GET') {
     $action = $input['action'] ?? null;
     $payload = $input['payload'] ?? null;
     $data = getData($dataFile);
+    $members = json_decode(file_get_contents($membersFile), true);
+    $data['members'] = $members;
     $saveRequired = false;
+    $membersSaveRequired = false;
 
     switch ($action) {
         case 'addMember':
             $data['members'][] = ['name' => $payload['name'], 'email' => $payload['email']];
-            $saveRequired = true;
+            $membersSaveRequired = true;
             break;
 
         case 'removeMember':
@@ -78,9 +79,21 @@ if ($method === 'GET') {
             $data['members'] = array_values(array_filter($data['members'], function($member) use ($nameToRemove) {
                 return $member['name'] !== $nameToRemove;
             }));
-            $saveRequired = true;
+            $membersSaveRequired = true;
             break;
-        
+
+        case 'editMember':
+            $originalName = $payload['originalName'];
+            foreach ($data['members'] as &$member) {
+                if ($member['name'] === $originalName) {
+                    $member['name'] = $payload['name'];
+                    $member['email'] = $payload['email'];
+                    break;
+                }
+            }
+            $membersSaveRequired = true;
+            break;
+
         case 'addMonthlyPayment':
             $totalAmountDue = 0;
             foreach ($data['monthlyPayments'] as $p) {
@@ -111,26 +124,26 @@ if ($method === 'GET') {
                 ];
                 $existingEntryIndex = count($data['monthlyPaymentDetails']) - 1;
             }
-            
+
             $entry = &$data['monthlyPaymentDetails'][$existingEntryIndex];
             $remaining = $entry['totalAmountDue'] - $entry['amountPaid'];
             $entry['remainingAmount'] = max(0, $remaining);
             $entry['status'] = $remaining <= 0 ? ($remaining < 0 ? "Overpaid: Excess " . abs($remaining) : "Fully Paid") : "Partially Paid: Remaining " . $remaining;
             $saveRequired = true;
             break;
-        
+
         // Add cases for other actions like addExpense, addEvent, updateAllFees etc.
         // For brevity, a generic 'save' can handle these for now if the frontend sends the whole object
         case 'addExpense':
             $data['expenses'][] = $payload;
             $saveRequired = true;
             break;
-        
+
         case 'addEvent':
             $data['extraPayments'][] = $payload;
             $saveRequired = true;
             break;
-        
+
         case 'updateAllFees':
             $data['monthlyPayments'] = $payload;
             $saveRequired = true;
@@ -146,7 +159,26 @@ if ($method === 'GET') {
             break;
     }
 
-    if ($saveRequired) {
+    if ($membersSaveRequired) {
+        if (saveData($membersFile, $data['members'])) {
+            unset($data['members']);
+            if ($saveRequired) {
+                if (saveData($dataFile, $data)) {
+                    echo json_encode(['status' => 'success', 'message' => 'Data updated successfully.']);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['status' => 'error', 'message' => 'Failed to write to data file.']);
+                }
+            } else {
+                echo json_encode(['status' => 'success', 'message' => 'Data updated successfully.']);
+            }
+        } else {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to write to members file.']);
+        }
+    }
+    else if ($saveRequired) {
+        unset($data['members']);
         if (saveData($dataFile, $data)) {
             echo json_encode(['status' => 'success', 'message' => 'Data updated successfully.']);
         } else {
