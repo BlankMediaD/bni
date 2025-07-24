@@ -52,6 +52,7 @@
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'reports-tab')">Reports</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'form-tab')">Submit Payment</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'admin-tab')">Admin Panel</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'members-tab')">Members</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'monthly-payments-tab')">Monthly Log</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'extra-payments-tab')">Extra Payments Log</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'expenses-tab')">Expenses Log</button>
@@ -147,6 +148,16 @@
         <div id="monthly-payments-tab" class="tab-content"><div class="bg-white p-4 sm:p-6 rounded-lg shadow-md"><h2 class="text-2xl font-bold mb-4">Monthly Payment Log</h2><div class="overflow-x-auto"><table id="monthly-log-table" class="w-full"></table></div></div></div>
         <div id="extra-payments-tab" class="tab-content"><div class="bg-white p-4 sm:p-6 rounded-lg shadow-md"><h2 class="text-2xl font-bold mb-4">Extra Payment Log</h2><div class="overflow-x-auto"><table id="extra-log-table" class="w-full"></table></div></div></div>
         <div id="expenses-tab" class="tab-content"><div class="bg-white p-4 sm:p-6 rounded-lg shadow-md"><h2 class="text-2xl font-bold mb-4">Expenses Log</h2><div class="overflow-x-auto"><table id="expenses-log-table" class="w-full"></table></div></div></div>
+
+        <!-- Members Tab -->
+        <div id="members-tab" class="tab-content">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4">Manage Members</h2>
+                <div id="members-container" class="overflow-x-auto">
+                     <table id="members-table" class="w-full"></table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modals -->
@@ -276,6 +287,46 @@
             renderMonthlyFeesAdmin();
             renderDashboard();
             renderMemberPaymentReport(document.getElementById('report-month-filter').value || currentMonthName);
+            renderMembersTable();
+        }
+
+        function renderMembersTable() {
+            const { members } = appData;
+            const tableData = members.map(member => {
+                return [
+                    `<input type="text" value="${member.name}" class="border-none bg-transparent" readonly>`,
+                    `<input type="email" value="${member.email}" class="border-none bg-transparent" readonly>`,
+                    `<button class="edit-member-btn bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
+                     <button class="save-member-btn bg-green-500 text-white px-2 py-1 rounded hidden">Save</button>`
+                ];
+            });
+
+            renderDataTable('members-table', [
+                { title: "Name" }, { title: "Email" }, { title: "Actions" }
+            ], tableData);
+
+            $('#members-table').on('click', '.edit-member-btn', function() {
+                const row = $(this).closest('tr');
+                row.find('input').prop('readonly', false).addClass('border');
+                row.find('.edit-member-btn').addClass('hidden');
+                row.find('.save-member-btn').removeClass('hidden');
+            });
+
+            $('#members-table').on('click', '.save-member-btn', function() {
+                const row = $(this).closest('tr');
+                const name = row.find('input').eq(0).val();
+                const email = row.find('input').eq(1).val();
+                const originalName = appData.members[row.index()].name;
+
+                sendAction('editMember', { originalName, name, email }).then(success => {
+                    if (success) {
+                        row.find('input').prop('readonly', true).removeClass('border');
+                        row.find('.edit-member-btn').removeClass('hidden');
+                        row.find('.save-member-btn').addClass('hidden');
+                        showModal('Success', 'Member updated successfully.');
+                    }
+                });
+            });
         }
 
         function formatCurrency(amount) { /* ... unchanged ... */ }
