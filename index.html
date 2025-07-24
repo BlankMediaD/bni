@@ -12,7 +12,7 @@
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.tailwindcss.min.js"></script>
     <link href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css" rel="stylesheet">
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -329,12 +329,12 @@
         function togglePaymentFields() { /* ... unchanged ... */ }
         function populateAllDropdowns() { /* ... unchanged ... */ }
         function showModal(title, message) { /* ... unchanged ... */ }
-        
+
         function showConfirmModal(title, message, onConfirm) {
             const modal = document.getElementById('confirm-modal');
             modal.querySelector('#confirm-title').textContent = title;
             modal.querySelector('#confirm-message').textContent = message;
-            
+
             const confirmBtn = modal.querySelector('#confirm-ok');
             const cancelBtn = modal.querySelector('#confirm-cancel');
 
@@ -353,7 +353,7 @@
 
             confirmBtn.addEventListener('click', confirmHandler);
             cancelBtn.addEventListener('click', cancelHandler);
-            
+
             modal.classList.add('active');
         }
 
@@ -432,7 +432,7 @@
         function renderMemberPaymentReport(month) {
             const { members, monthlyPaymentDetails, monthlyPayments } = appData;
             const monthDue = monthlyPayments.find(p => p.month === month)?.amount || 0;
-            
+
             const reportData = members.map(member => {
                 const payment = monthlyPaymentDetails.find(p => p.memberName === member.name && p.month === month);
                 const paid = payment ? payment.amountPaid : 0;
@@ -448,15 +448,15 @@
                 { title: "Member Name" }, { title: "Total Due" }, { title: "Amount Paid" }, { title: "Remaining" }, { title: "Status" }
             ], reportData);
         }
-        
+
         function renderMonthlyPaymentsTable() {
             const details = appData.monthlyPaymentDetails || [];
             const data = details.map(p => {
                 const statusClass = p.status.startsWith('Fully') ? 'text-green-600' : p.status.startsWith('Partially') ? 'text-yellow-600' : 'text-red-600';
-                return [p.memberName, p.month, formatCurrency(p.amountPaid), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`, p.paidVia];
+                return [new Date(p.date).toLocaleDateString(), p.memberName, p.month, formatCurrency(p.amountPaid), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`, p.paidVia];
             });
             renderDataTable('monthly-log-table', [
-                { title: "Member" }, { title: "Month" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }, { title: "Paid Via" }
+                { title: "Date" }, { title: "Member" }, { title: "Month" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }, { title: "Paid Via" }
             ], data);
         }
 
@@ -464,13 +464,13 @@
             const details = appData.extraPaymentDetails || [];
             const data = details.map(p => {
                 const statusClass = p.status.startsWith('Fully') ? 'text-green-600' : p.status.startsWith('Partially') ? 'text-yellow-600' : 'text-red-600';
-                return [p.memberName, p.extraPaymentFor, formatCurrency(p.paidAmount), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`];
+                return [new Date(p.date).toLocaleDateString(), p.memberName, p.extraPaymentFor, formatCurrency(p.paidAmount), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`];
             });
             renderDataTable('extra-log-table', [
-                { title: "Member" }, { title: "For" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }
+                { title: "Date" }, { title: "Member" }, { title: "For" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }
             ], data);
         }
-        
+
         function renderExpensesTable() {
             const expenses = appData.expenses || [];
             const data = expenses.map((e, index) => [
@@ -486,7 +486,7 @@
                 { title: "Date" }, { title: "Expense" }, { title: "Amount" }, { title: "Comment" }, { title: "Actions" }
             ], data);
         }
-        
+
         function renderAdminMemberList() {
             const container = document.getElementById('member-list');
             container.innerHTML = appData.members.map(member => `
@@ -516,7 +516,7 @@
                 </div>
             `).join('');
         }
-        
+
         function renderMonthlyFeesAdmin() { /* ... unchanged ... */ }
 
         // --- FORM HANDLING & LOGIC ---
@@ -537,7 +537,7 @@
             const email = emailInput.value.trim();
             if (!name || !email) { showModal('Error', 'Please enter both name and email.'); return; }
             if (appData.members.some(m => m.name.toLowerCase() === name.toLowerCase())) { showModal('Error', 'A member with this name already exists.'); return; }
-            
+
             const success = await sendAction('addMember', { name, email });
             if (success) {
                 showModal('Success', `Member "${name}" added successfully.`);
@@ -556,7 +556,7 @@
                 });
             }
         }
-        
+
         // --- Unchanged Functions (for brevity, but still present in the full script) ---
         // These functions are mostly the same but now use `sendAction` instead of modifying `appData` directly and calling `saveData`.
         // The logic inside them remains the same.

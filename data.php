@@ -132,6 +132,43 @@ if ($method === 'GET') {
             $saveRequired = true;
             break;
 
+        case 'addExtraPayment':
+            $totalAmountDue = 0;
+            foreach ($data['extraPayments'] as $p) {
+                if ($p['name'] === $payload['extraPaymentFor']) {
+                    $totalAmountDue = $p['amount'];
+                    break;
+                }
+            }
+
+            $existingEntryIndex = -1;
+            foreach ($data['extraPaymentDetails'] as $i => $p) {
+                if ($p['memberName'] === $payload['memberName'] && $p['extraPaymentFor'] === $payload['extraPaymentFor']) {
+                    $existingEntryIndex = $i;
+                    break;
+                }
+            }
+
+            if ($existingEntryIndex !== -1) {
+                $data['extraPaymentDetails'][$existingEntryIndex]['paidAmount'] += $payload['amountPaid'];
+            } else {
+                $data['extraPaymentDetails'][] = [
+                    'memberName' => $payload['memberName'],
+                    'extraPaymentFor' => $payload['extraPaymentFor'],
+                    'paidAmount' => $payload['amountPaid'],
+                    'totalAmountDue' => $totalAmountDue,
+                    'date' => date('c')
+                ];
+                $existingEntryIndex = count($data['extraPaymentDetails']) - 1;
+            }
+
+            $entry = &$data['extraPaymentDetails'][$existingEntryIndex];
+            $remaining = $entry['totalAmountDue'] - $entry['paidAmount'];
+            $entry['remainingAmount'] = max(0, $remaining);
+            $entry['status'] = $remaining <= 0 ? ($remaining < 0 ? "Overpaid: Excess " . abs($remaining) : "Fully Paid") : "Partially Paid: Remaining " . $remaining;
+            $saveRequired = true;
+            break;
+
         // Add cases for other actions like addExpense, addEvent, updateAllFees etc.
         // For brevity, a generic 'save' can handle these for now if the frontend sends the whole object
         case 'addExpense':
