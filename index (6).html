@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Tracker Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery is a dependency for DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- DataTables JS and CSS -->
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.tailwindcss.min.js"></script>
+    <link href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.min.css" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .modal, .loader-overlay { display: none; }
+        .modal.active, .loader-overlay.active { display: flex; }
+        .chart-container { position: relative; height: 40vh; width: 100%; }
+        /* Style for DataTables search box */
+        div.dt-container .dt-search input {
+            width: 100% !important;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Loading Overlay -->
+    <div id="loader" class="loader-overlay fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="text-white text-xl font-semibold">Loading Data...</div>
+    </div>
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Community Payment Tracker</h1>
+            <p class="text-md text-gray-600 mt-2">Manage and track payments, expenses, and reports seamlessly.</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="mb-8">
+            <div class="flex flex-wrap border-b border-gray-300">
+                <button class="tab-link py-2 px-4 -mb-px bg-white border-b-2 border-blue-500 text-blue-600 font-semibold rounded-t-lg" onclick="openTab(event, 'dashboard-tab')">Dashboard</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'reports-tab')">Reports</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'form-tab')">Submit Payment</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'admin-tab')">Admin Panel</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'monthly-payments-tab')">Monthly Log</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'extra-payments-tab')">Extra Payments Log</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'expenses-tab')">Expenses Log</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center"><h3 class="text-lg font-semibold text-gray-600">Total Members</h3><p id="total-members" class="text-3xl font-bold text-blue-600 mt-2">0</p></div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center"><h3 class="text-lg font-semibold text-gray-600">Total Collected</h3><p id="total-collected" class="text-3xl font-bold text-green-600 mt-2">₹0</p></div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center"><h3 class="text-lg font-semibold text-gray-600">Total Due</h3><p id="total-due" class="text-3xl font-bold text-red-600 mt-2">₹0</p></div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center"><h3 class="text-lg font-semibold text-gray-600">June Pending</h3><p id="june-pending" class="text-3xl font-bold text-orange-500 mt-2">₹0</p></div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center"><h3 class="text-lg font-semibold text-gray-600">July Pending</h3><p id="july-pending" class="text-3xl font-bold text-yellow-500 mt-2">₹0</p></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold mb-4">Monthly Collection Status</h2>
+                    <div class="chart-container"><canvas id="monthly-collection-chart"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold mb-4">This Month's Expenses</h2>
+                    <div id="monthly-expenses-list" class="space-y-3 overflow-y-auto h-80"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports-tab" class="tab-content">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4">Month-wise Payment Report</h2>
+                <div class="mb-4">
+                    <label for="report-month-filter" class="block text-sm font-medium text-gray-700">Select Month</label>
+                    <select id="report-month-filter" class="mt-1 block w-full md:w-1/3 p-2 border border-gray-300 rounded-md">
+                    </select>
+                </div>
+                <div id="report-container" class="overflow-x-auto">
+                     <table id="report-table" class="w-full"></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Tab -->
+        <div id="form-tab" class="tab-content">
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-center">New Payment</h2>
+                <form id="payment-form">
+                    <div class="mb-4">
+                        <label for="payment-type" class="block text-sm font-medium text-gray-700 mb-1">Payment Type</label>
+                        <select id="payment-type" name="payment-type" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Payment Type</option><option value="monthly">Monthly Payment</option><option value="extra">Extra Payment</option>
+                        </select>
+                    </div>
+                    <div id="monthly-payment-fields" class="hidden space-y-4">
+                        <div><label for="monthly-member-name" class="block text-sm font-medium text-gray-700 mb-1">Member Name</label><select id="monthly-member-name" class="w-full p-2 border border-gray-300 rounded-md"></select></div>
+                        <div><label for="month" class="block text-sm font-medium text-gray-700 mb-1">Month</label><select id="month" class="w-full p-2 border border-gray-300 rounded-md"></select></div>
+                        <div id="monthly-payment-history" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-md hidden"></div>
+                        <div><label for="monthly-amount-paid" class="block text-sm font-medium text-gray-700 mb-1">Amount Paid (INR)</label><input type="number" id="monthly-amount-paid" class="w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 1500"></div>
+                        <div><label for="paid-via" class="block text-sm font-medium text-gray-700 mb-1">Paid Via</label><input type="text" id="paid-via" class="w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., UPI, Cash"></div>
+                    </div>
+                    <div id="extra-payment-fields" class="hidden space-y-4">
+                        <div><label for="extra-member-name" class="block text-sm font-medium text-gray-700 mb-1">Member Name</label><select id="extra-member-name" class="w-full p-2 border border-gray-300 rounded-md"></select></div>
+                        <div><label for="extra-payment-for" class="block text-sm font-medium text-gray-700 mb-1">Extra Payment For</label><select id="extra-payment-for" class="w-full p-2 border border-gray-300 rounded-md"></select></div>
+                        <div id="extra-payment-history" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-md hidden"></div>
+                        <div><label for="extra-amount-paid" class="block text-sm font-medium text-gray-700 mb-1">Amount Paid (INR)</label><input type="number" id="extra-amount-paid" class="w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 500"></div>
+                    </div>
+                    <div class="mt-6"><button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Submit Payment</button></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Panel Tab -->
+        <div id="admin-tab" class="tab-content">
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1">
+                    <h2 class="text-2xl font-bold mb-4">Manage Members</h2>
+                    <div class="mb-6"><h3 class="text-lg font-semibold mb-2">Add New Member</h3><form id="add-member-form" class="space-y-4"><div><label for="member-name" class="block text-sm font-medium text-gray-700">Member Name</label><input type="text" id="member-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., John Doe"></div><div><label for="member-email" class="block text-sm font-medium text-gray-700">Member Email</label><input type="email" id="member-email" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., john.doe@example.com"></div><button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Add Member</button></form></div>
+                    <div><h3 class="text-lg font-semibold mb-2">Existing Members</h3><div id="member-list" class="space-y-2 max-h-96 overflow-y-auto"></div></div>
+                </div>
+                <div class="lg:col-span-1">
+                    <h2 class="text-2xl font-bold mb-4">Manage Events & Expenses</h2>
+                    <div class="mb-6"><h3 class="text-lg font-semibold mb-2">Add New Event</h3><form id="admin-event-form" class="space-y-4"><div><label for="event-name" class="block text-sm font-medium text-gray-700">Event Name</label><input type="text" id="event-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., Annual Picnic"></div><div><label for="event-amount" class="block text-sm font-medium text-gray-700">Amount Due (INR)</label><input type="number" id="event-amount" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 2000"></div><button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">Add Event</button></form></div>
+                    <div><h3 class="text-lg font-semibold mb-2">Add Expense</h3><form id="add-expense-form" class="space-y-4"><div><label for="expense-name" class="block text-sm font-medium text-gray-700">Expense Name</label><input type="text" id="expense-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div><div><label for="expense-amount" class="block text-sm font-medium text-gray-700">Amount (INR)</label><input type="number" id="expense-amount" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div><div><label for="expense-date" class="block text-sm font-medium text-gray-700">Date</label><input type="date" id="expense-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div><div><label for="expense-comment" class="block text-sm font-medium text-gray-700">Comment</label><textarea id="expense-comment" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea></div><button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700">Add Expense</button></form></div>
+                </div>
+                <div class="lg:col-span-1">
+                    <h2 class="text-2xl font-bold mb-4">Manage Monthly Fees</h2>
+                    <form id="monthly-fees-form"><div id="monthly-fees-list" class="space-y-2"></div><button type="submit" class="w-full mt-4 bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700">Save All Monthly Fees</button></form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Tabs -->
+        <div id="monthly-payments-tab" class="tab-content"><div class="bg-white p-4 sm:p-6 rounded-lg shadow-md"><h2 class="text-2xl font-bold mb-4">Monthly Payment Log</h2><div class="overflow-x-auto"><table id="monthly-log-table" class="w-full"></table></div></div></div>
+        <div id="extra-payments-tab" class="tab-content"><div class="bg-white p-4 sm:p-6 rounded-lg shadow-md"><h2 class="text-2xl font-bold mb-4">Extra Payment Log</h2><div class="overflow-x-auto"><table id="extra-log-table" class="w-full"></table></div></div></div>
+        <div id="expenses-tab" class="tab-content"><div class="bg-white p-4 sm:p-6 rounded-lg shadow-md"><h2 class="text-2xl font-bold mb-4">Expenses Log</h2><div class="overflow-x-auto"><table id="expenses-log-table" class="w-full"></table></div></div></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="message-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50"><div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto text-center"><h3 id="modal-title" class="text-xl font-bold mb-4"></h3><p id="modal-message"></p><button id="modal-close" class="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Close</button></div></div>
+    <div id="confirm-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50"><div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto text-center"><h3 id="confirm-title" class="text-xl font-bold mb-4">Are you sure?</h3><p id="confirm-message"></p><div class="mt-6 flex justify-center space-x-4"><button id="confirm-cancel" class="w-full bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400">Cancel</button><button id="confirm-ok" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Confirm</button></div></div></div>
+
+    <script>
+        // --- GLOBAL VARIABLES ---
+        let monthlyChart = null;
+        let appData = {};
+        const API_ENDPOINT = 'data.php';
+        const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const today = new Date("2025-07-24T23:40:00");
+        const currentMonthIndex = today.getMonth();
+        const currentMonthName = MONTH_NAMES[currentMonthIndex];
+        const prevMonthName = MONTH_NAMES[currentMonthIndex - 1];
+
+        // --- DATA HANDLING ---
+        async function loadData() {
+            const loader = document.getElementById('loader');
+            loader.classList.add('active');
+            try {
+                const response = await fetch(`${API_ENDPOINT}?_=${new Date().getTime()}`); // Cache-busting
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                appData = await response.json();
+                renderAll();
+            } catch (error) {
+                console.error("Failed to load data:", error);
+                showModal('Error', 'Could not load data from the server.');
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+
+        async function sendAction(action, payload) {
+            const loader = document.getElementById('loader');
+            loader.querySelector('div').textContent = 'Saving Data...';
+            loader.classList.add('active');
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, payload })
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                await loadData(); // Reload data from server to ensure sync
+                return true;
+            } catch (error) {
+                console.error(`Failed to perform action '${action}':`, error);
+                showModal('Error', `Could not save data: ${error.message}`);
+                return false;
+            } finally {
+                loader.querySelector('div').textContent = 'Loading Data...';
+                loader.classList.remove('active');
+            }
+        }
+
+        // --- UI & DOM MANIPULATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('payment-type').addEventListener('change', togglePaymentFields);
+            document.getElementById('payment-form').addEventListener('submit', handleFormSubmit);
+            document.getElementById('admin-event-form').addEventListener('submit', handleAdminEventSubmit);
+            document.getElementById('add-member-form').addEventListener('submit', handleAddMemberSubmit);
+            document.getElementById('add-expense-form').addEventListener('submit', handleAddExpenseSubmit);
+            document.getElementById('monthly-fees-form').addEventListener('submit', handleUpdateAllMonthlyFees);
+            document.getElementById('report-month-filter').addEventListener('change', (e) => renderMemberPaymentReport(e.target.value));
+            document.getElementById('modal-close').addEventListener('click', () => document.getElementById('message-modal').classList.remove('active'));
+            document.getElementById('member-list').addEventListener('click', handleMemberListClick);
+            ['monthly-member-name', 'month'].forEach(id => document.getElementById(id).addEventListener('change', showMonthlyPaymentHistory));
+            ['extra-member-name', 'extra-payment-for'].forEach(id => document.getElementById(id).addEventListener('change', showExtraPaymentHistory));
+        }
+
+        function openTab(event, tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-link').forEach(link => link.className = link.className.replace(' border-blue-500 text-blue-600 bg-white', ' text-gray-500'));
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.className += ' border-blue-500 text-blue-600 bg-white';
+            if(tabName === 'dashboard-tab') { renderDashboard(); }
+        }
+
+        function togglePaymentFields() { /* ... unchanged ... */ }
+        function populateAllDropdowns() { /* ... unchanged ... */ }
+        function showModal(title, message) { /* ... unchanged ... */ }
+        
+        function showConfirmModal(title, message, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            modal.querySelector('#confirm-title').textContent = title;
+            modal.querySelector('#confirm-message').textContent = message;
+            
+            const confirmBtn = modal.querySelector('#confirm-ok');
+            const cancelBtn = modal.querySelector('#confirm-cancel');
+
+            const confirmHandler = () => {
+                modal.classList.remove('active');
+                onConfirm();
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+            };
+
+            const cancelHandler = () => {
+                modal.classList.remove('active');
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+            };
+
+            confirmBtn.addEventListener('click', confirmHandler);
+            cancelBtn.addEventListener('click', cancelHandler);
+            
+            modal.classList.add('active');
+        }
+
+        // --- DATA RENDERING & DASHBOARD ---
+        function renderAll() {
+            if (!appData.members) return;
+            populateAllDropdowns();
+            renderAdminMemberList();
+            renderMonthlyPaymentsTable();
+            renderExtraPaymentsTable();
+            renderExpensesTable();
+            renderMonthlyFeesAdmin();
+            renderDashboard();
+            renderMemberPaymentReport(document.getElementById('report-month-filter').value || currentMonthName);
+        }
+
+        function formatCurrency(amount) { /* ... unchanged ... */ }
+        function getPendingForMonth(monthName) { /* ... unchanged ... */ }
+        function renderDashboard() { /* ... unchanged ... */ }
+
+        function renderDataTable(tableId, columns, data, options = {}) {
+            const table = $(`#${tableId}`);
+            if ($.fn.DataTable.isDataTable(table)) {
+                table.DataTable().destroy();
+                table.empty(); // Clear headers and body
+            }
+            table.DataTable({
+                columns,
+                data,
+                responsive: true,
+                ...options
+            });
+        }
+
+        function renderMemberPaymentReport(month) {
+            const { members, monthlyPaymentDetails, monthlyPayments } = appData;
+            const monthDue = monthlyPayments.find(p => p.month === month)?.amount || 0;
+            
+            const reportData = members.map(member => {
+                const payment = monthlyPaymentDetails.find(p => p.memberName === member.name && p.month === month);
+                const paid = payment ? payment.amountPaid : 0;
+                const remaining = monthDue - paid;
+                let status, color;
+                if (paid >= monthDue) { status = 'Fully Paid'; color = 'bg-green-100 text-green-800'; }
+                else if (paid > 0) { status = 'Partially Paid'; color = 'bg-yellow-100 text-yellow-800'; }
+                else { status = 'Pending'; color = 'bg-red-100 text-red-800'; }
+                return [member.name, formatCurrency(monthDue), formatCurrency(paid), formatCurrency(remaining), `<span class="px-2 py-1 rounded-full text-xs font-semibold ${color}">${status}</span>`];
+            });
+
+            renderDataTable('report-table', [
+                { title: "Member Name" }, { title: "Total Due" }, { title: "Amount Paid" }, { title: "Remaining" }, { title: "Status" }
+            ], reportData);
+        }
+        
+        function renderMonthlyPaymentsTable() {
+            const details = appData.monthlyPaymentDetails || [];
+            const data = details.map(p => {
+                const statusClass = p.status.startsWith('Fully') ? 'text-green-600' : p.status.startsWith('Partially') ? 'text-yellow-600' : 'text-red-600';
+                return [p.memberName, p.month, formatCurrency(p.amountPaid), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`, p.paidVia];
+            });
+            renderDataTable('monthly-log-table', [
+                { title: "Member" }, { title: "Month" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }, { title: "Paid Via" }
+            ], data);
+        }
+
+        function renderExtraPaymentsTable() {
+            const details = appData.extraPaymentDetails || [];
+            const data = details.map(p => {
+                const statusClass = p.status.startsWith('Fully') ? 'text-green-600' : p.status.startsWith('Partially') ? 'text-yellow-600' : 'text-red-600';
+                return [p.memberName, p.extraPaymentFor, formatCurrency(p.paidAmount), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`];
+            });
+            renderDataTable('extra-log-table', [
+                { title: "Member" }, { title: "For" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }
+            ], data);
+        }
+        
+        function renderExpensesTable() {
+            const expenses = appData.expenses || [];
+            const data = expenses.map(e => [new Date(e.date).toLocaleDateString(), e.name, formatCurrency(e.amount), e.comment]);
+            renderDataTable('expenses-log-table', [
+                { title: "Date" }, { title: "Expense" }, { title: "Amount" }, { title: "Comment" }
+            ], data);
+        }
+        
+        function renderAdminMemberList() {
+            const container = document.getElementById('member-list');
+            container.innerHTML = appData.members.map(member => `
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                    <div>
+                        <p class="font-semibold">${member.name}</p>
+                        <p class="text-xs text-gray-500">${member.email}</p>
+                    </div>
+                    <button data-name="${member.name}" class="remove-member-btn text-red-500 hover:text-red-700 font-bold">Remove</button>
+                </div>
+            `).join('');
+        }
+        
+        function renderMonthlyFeesAdmin() { /* ... unchanged ... */ }
+
+        // --- FORM HANDLING & LOGIC ---
+        async function handleUpdateAllMonthlyFees(e) { /* ... unchanged, but now calls sendAction ... */ }
+        async function handleAddExpenseSubmit(e) { /* ... unchanged, but now calls sendAction ... */ }
+        async function handleFormSubmit(e) { /* ... unchanged ... */ }
+        async function handleAdminEventSubmit(e) { /* ... unchanged, but now calls sendAction ... */ }
+        async function processMonthlyPayment() { /* ... unchanged, but now calls sendAction ... */ }
+        async function processExtraPayment() { /* ... unchanged, but now calls sendAction ... */ }
+        function showMonthlyPaymentHistory() { /* ... unchanged ... */ }
+        function showExtraPaymentHistory() { /* ... unchanged ... */ }
+
+        async function handleAddMemberSubmit(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('member-name');
+            const emailInput = document.getElementById('member-email');
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            if (!name || !email) { showModal('Error', 'Please enter both name and email.'); return; }
+            if (appData.members.some(m => m.name.toLowerCase() === name.toLowerCase())) { showModal('Error', 'A member with this name already exists.'); return; }
+            
+            const success = await sendAction('addMember', { name, email });
+            if (success) {
+                showModal('Success', `Member "${name}" added successfully.`);
+                e.target.reset();
+            }
+        }
+
+        function handleMemberListClick(e) {
+            if (e.target.classList.contains('remove-member-btn')) {
+                const name = e.target.dataset.name;
+                showConfirmModal('Remove Member', `Are you sure you want to remove ${name}? This action cannot be undone.`, async () => {
+                    const success = await sendAction('removeMember', { name });
+                    if (success) {
+                        showModal('Success', `Member "${name}" has been removed.`);
+                    }
+                });
+            }
+        }
+        
+        // --- Unchanged Functions (for brevity, but still present in the full script) ---
+        // These functions are mostly the same but now use `sendAction` instead of modifying `appData` directly and calling `saveData`.
+        // The logic inside them remains the same.
+        togglePaymentFields = () => { const type = document.getElementById('payment-type').value; document.getElementById('monthly-payment-fields').classList.toggle('hidden', type !== 'monthly'); document.getElementById('extra-payment-fields').classList.toggle('hidden', type !== 'extra'); };
+        populateAllDropdowns = () => { const memberOptions = '<option value="">Select Member</option>' + appData.members.map(m => `<option value="${m.name}">${m.name}</option>`).join(''); document.getElementById('monthly-member-name').innerHTML = memberOptions; document.getElementById('extra-member-name').innerHTML = memberOptions; document.getElementById('extra-payment-for').innerHTML = '<option value="">Select Event</option>' + appData.extraPayments.map(e => `<option value="${e.name}">${e.name}</option>`).join(''); const monthOptions = appData.monthlyPayments.map(p => `<option value="${p.month}">${p.month}</option>`).join(''); document.getElementById('month').innerHTML = monthOptions; document.getElementById('report-month-filter').innerHTML = monthOptions; document.getElementById('report-month-filter').value = currentMonthName; };
+        showModal = (title, message) => { document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = message; document.getElementById('message-modal').classList.add('active'); };
+        formatCurrency = (amount) => amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        getPendingForMonth = (monthName) => { const { members, monthlyPaymentDetails, monthlyPayments } = appData; const monthDueAmount = monthlyPayments.find(p => p.month === monthName)?.amount || 0; const totalMonthDue = monthDueAmount * members.length; const totalMonthCollected = monthlyPaymentDetails.filter(p => p.month === monthName).reduce((sum, p) => sum + p.amountPaid, 0); return totalMonthDue - totalMonthCollected; };
+        renderDashboard = () => { const { members, monthlyPaymentDetails, extraPaymentDetails, monthlyPayments, expenses } = appData; document.getElementById('total-members').textContent = members.length; const totalCollected = monthlyPaymentDetails.reduce((sum, p) => sum + p.amountPaid, 0) + extraPaymentDetails.reduce((sum, p) => sum + p.paidAmount, 0); document.getElementById('total-collected').textContent = formatCurrency(totalCollected); const totalDueOverall = monthlyPayments.slice(0, currentMonthIndex + 1).reduce((sum, p) => sum + (p.amount * members.length), 0) + extraPaymentDetails.reduce((sum, p) => sum + p.totalAmountDue, 0); const totalPending = totalDueOverall - totalCollected; document.getElementById('total-due').textContent = formatCurrency(totalPending); document.getElementById('june-pending').textContent = formatCurrency(getPendingForMonth(prevMonthName)); document.getElementById('july-pending').textContent = formatCurrency(getPendingForMonth(currentMonthName)); const currentMonthExpenses = expenses.filter(e => new Date(e.date).getMonth() === currentMonthIndex); const expensesListContainer = document.getElementById('monthly-expenses-list'); expensesListContainer.innerHTML = currentMonthExpenses.length === 0 ? '<p class="text-gray-500">No expenses recorded for this month.</p>' : currentMonthExpenses.map(e => `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-md"><div><p class="font-semibold">${e.name}</p><p class="text-xs text-gray-500">${new Date(e.date).toLocaleDateString()}</p></div><p class="font-bold text-red-500">${formatCurrency(e.amount)}</p></div>`).join(''); const monthlyData = monthlyPayments.map(monthInfo => ({ month: monthInfo.month, collected: monthlyPaymentDetails.filter(p => p.month === monthInfo.month).reduce((sum, p) => sum + p.amountPaid, 0), due: monthInfo.amount * members.length })); const ctx = document.getElementById('monthly-collection-chart').getContext('2d'); if (monthlyChart) { monthlyChart.destroy(); } monthlyChart = new Chart(ctx, { type: 'bar', data: { labels: monthlyData.map(d => d.month), datasets: [{ label: 'Collected', data: monthlyData.map(d => d.collected), backgroundColor: 'rgba(75, 192, 192, 0.6)' }, { label: 'Due', data: monthlyData.map(d => d.due), backgroundColor: 'rgba(255, 99, 132, 0.6)' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } }); };
+        renderMonthlyFeesAdmin = () => { document.getElementById('monthly-fees-list').innerHTML = appData.monthlyPayments.map(p => `<div class="flex items-center justify-between p-2 bg-gray-50 rounded-md"><span class="font-medium">${p.month}</span><input type="number" value="${p.amount}" data-month="${p.month}" class="w-24 p-1 border border-gray-300 rounded-md monthly-fee-input"></div>`).join(''); };
+        handleUpdateAllMonthlyFees = async (e) => { e.preventDefault(); const newFees = []; document.querySelectorAll('.monthly-fee-input').forEach(input => { newFees.push({ month: input.dataset.month, amount: parseFloat(input.value) }); }); await sendAction('updateAllFees', newFees); showModal('Success', 'Monthly fees have been updated.'); };
+        handleAddExpenseSubmit = async (e) => { e.preventDefault(); const name = document.getElementById('expense-name').value.trim(); const amount = parseFloat(document.getElementById('expense-amount').value); const date = document.getElementById('expense-date').value; const comment = document.getElementById('expense-comment').value.trim(); if (!name || isNaN(amount) || !date) { showModal('Error', 'Please fill all required expense fields.'); return; } await sendAction('addExpense', { name, amount, date, comment }); showModal('Success', 'Expense added successfully.'); e.target.reset(); };
+        handleFormSubmit = async (e) => { e.preventDefault(); const type = document.getElementById('payment-type').value; if (type === 'monthly') await processMonthlyPayment(); else if (type === 'extra') await processExtraPayment(); else showModal('Error', 'Please select a payment type.'); };
+        handleAdminEventSubmit = async (e) => { e.preventDefault(); const name = document.getElementById('event-name').value.trim(); const amount = parseFloat(document.getElementById('event-amount').value); if (!name || isNaN(amount) || amount <= 0) { showModal('Error', 'Please enter a valid event name and amount.'); return; } await sendAction('addEvent', { name, amount }); showModal('Success', `Event "${name}" added successfully.`); e.target.reset(); };
+        processMonthlyPayment = async () => { const memberName = document.getElementById('monthly-member-name').value; const month = document.getElementById('month').value; const amountPaid = parseFloat(document.getElementById('monthly-amount-paid').value); const paidVia = document.getElementById('paid-via').value; if (!memberName || !month || isNaN(amountPaid) || amountPaid <= 0) { showModal('Error', 'Please fill all fields correctly.'); return; } await sendAction('addMonthlyPayment', { memberName, month, amountPaid, paidVia }); showModal('Success', 'Monthly payment recorded!'); document.getElementById('payment-form').reset(); };
+        processExtraPayment = async () => { const memberName = document.getElementById('extra-member-name').value; const extraPaymentFor = document.getElementById('extra-payment-for').value; const amountPaid = parseFloat(document.getElementById('extra-amount-paid').value); if (!memberName || !extraPaymentFor || isNaN(amountPaid) || amountPaid <= 0) { showModal('Error', 'Please fill all fields correctly.'); return; } await sendAction('addExtraPayment', { memberName, extraPaymentFor, amountPaid }); showModal('Success', 'Extra payment recorded!'); document.getElementById('payment-form').reset(); };
+        showMonthlyPaymentHistory = () => { const memberName = document.getElementById('monthly-member-name').value; const month = document.getElementById('month').value; const historyDiv = document.getElementById('monthly-payment-history'); if (!memberName || !month) { historyDiv.classList.add('hidden'); return; } const entry = appData.monthlyPaymentDetails.find(p => p.memberName === memberName && p.month === month); if (entry) { historyDiv.innerHTML = `<strong>Payment History:</strong> Paid ${formatCurrency(entry.amountPaid)} of ${formatCurrency(entry.totalAmountDue)}. Status: ${entry.status}`; historyDiv.classList.remove('hidden'); } else { historyDiv.classList.add('hidden'); } };
+        showExtraPaymentHistory = () => { const memberName = document.getElementById('extra-member-name').value; const extraFor = document.getElementById('extra-payment-for').value; const historyDiv = document.getElementById('extra-payment-history'); if (!memberName || !extraFor) { historyDiv.classList.add('hidden'); return; } const entry = appData.extraPaymentDetails.find(p => p.memberName === memberName && p.extraPaymentFor === extraFor); if (entry) { historyDiv.innerHTML = `<strong>Payment History:</strong> Paid ${formatCurrency(entry.paidAmount)} of ${formatCurrency(entry.totalAmountDue)}. Status: ${entry.status}`; historyDiv.classList.remove('hidden'); } else { historyDiv.classList.add('hidden'); } };
+
+    </script>
+</body>
+</html>
