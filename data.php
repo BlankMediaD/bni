@@ -70,7 +70,7 @@ if ($method === 'GET') {
 
     switch ($action) {
         case 'addMember':
-            $data['members'][] = ['name' => $payload['name'], 'email' => $payload['email']];
+            $data['members'][] = ['name' => $payload['name'], 'email' => $payload['email'], 'joining_date' => $payload['joining_date']];
             $membersSaveRequired = true;
             break;
 
@@ -91,6 +91,18 @@ if ($method === 'GET') {
                     break;
                 }
             }
+            $membersSaveRequired = true;
+            break;
+
+        case 'toggleMemberStatus':
+            $index = $payload['index'];
+            $data['members'][$index]['status'] = $payload['status'];
+            $membersSaveRequired = true;
+            break;
+
+        case 'setDeactivationMonth':
+            $index = $payload['index'];
+            $data['members'][$index]['deactivation_month'] = $payload['month'];
             $membersSaveRequired = true;
             break;
 
@@ -129,6 +141,46 @@ if ($method === 'GET') {
             $remaining = $entry['totalAmountDue'] - $entry['amountPaid'];
             $entry['remainingAmount'] = max(0, $remaining);
             $entry['status'] = $remaining <= 0 ? ($remaining < 0 ? "Overpaid: Excess " . abs($remaining) : "Fully Paid") : "Partially Paid: Remaining " . $remaining;
+            $saveRequired = true;
+            break;
+
+        case 'editExtraPayment':
+            $index = $payload['index'];
+            if (!isset($data['history'])) {
+                $data['history'] = [];
+            }
+            $data['history'][] = $data['extraPaymentDetails'][$index];
+            $data['extraPaymentDetails'][$index]['paidAmount'] = $payload['amountPaid'];
+            $saveRequired = true;
+            break;
+
+        case 'deleteExtraPayment':
+            $index = $payload['index'];
+            if (!isset($data['history'])) {
+                $data['history'] = [];
+            }
+            $data['history'][] = $data['extraPaymentDetails'][$index];
+            array_splice($data['extraPaymentDetails'], $index, 1);
+            $saveRequired = true;
+            break;
+
+        case 'editMonthlyPayment':
+            $index = $payload['index'];
+            if (!isset($data['history'])) {
+                $data['history'] = [];
+            }
+            $data['history'][] = $data['monthlyPaymentDetails'][$index];
+            $data['monthlyPaymentDetails'][$index]['amountPaid'] = $payload['amountPaid'];
+            $saveRequired = true;
+            break;
+
+        case 'deleteMonthlyPayment':
+            $index = $payload['index'];
+            if (!isset($data['history'])) {
+                $data['history'] = [];
+            }
+            $data['history'][] = $data['monthlyPaymentDetails'][$index];
+            array_splice($data['monthlyPaymentDetails'], $index, 1);
             $saveRequired = true;
             break;
 
@@ -178,12 +230,20 @@ if ($method === 'GET') {
 
         case 'editExpense':
             $index = $payload['index'];
+            if (!isset($data['history'])) {
+                $data['history'] = [];
+            }
+            $data['history'][] = $data['expenses'][$index];
             $data['expenses'][$index] = $payload['updatedExpense'];
             $saveRequired = true;
             break;
 
         case 'deleteExpense':
             $index = $payload['index'];
+            if (!isset($data['history'])) {
+                $data['history'] = [];
+            }
+            $data['history'][] = $data['expenses'][$index];
             array_splice($data['expenses'], $index, 1);
             $saveRequired = true;
             break;

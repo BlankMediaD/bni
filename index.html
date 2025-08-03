@@ -70,12 +70,15 @@
                 <button class="tab-link py-2 px-4 -mb-px bg-white border-b-2 border-blue-500 text-blue-600 font-semibold rounded-t-lg" onclick="openTab(event, 'dashboard-tab')">Dashboard</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'reports-tab')">Reports</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'form-tab')">Submit Payment</button>
-                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'admin-tab')">Admin Panel</button>
-                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'extra-events-tab')">Extra Events</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'members-tab')">Members</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'monthly-payments-tab')">Monthly Log</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'extra-payments-tab')">Extra Payments Log</button>
                 <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'expenses-tab')">Expenses Log</button>
+            </div>
+            <div class="flex flex-wrap border-b border-gray-300 mt-2">
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'admin-tab')">Admin Panel</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'extra-events-tab')">Extra Events</button>
+                <button class="tab-link py-2 px-4 text-gray-500 hover:text-blue-600 font-semibold" onclick="openTab(event, 'settings-tab')">Settings</button>
             </div>
         </div>
 
@@ -149,7 +152,6 @@
             <div class="bg-white p-6 rounded-lg shadow-md max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1">
                     <h2 class="text-2xl font-bold mb-4">Manage Members</h2>
-                    <div class="mb-6"><h3 class="text-lg font-semibold mb-2">Add New Member</h3><form id="add-member-form" class="space-y-4"><div><label for="member-name" class="block text-sm font-medium text-gray-700">Member Name</label><input type="text" id="member-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., John Doe"></div><div><label for="member-email" class="block text-sm font-medium text-gray-700">Member Email</label><input type="email" id="member-email" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., john.doe@example.com"></div><button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Add Member</button></form></div>
                     <div><h3 class="text-lg font-semibold mb-2">Existing Members</h3><div id="member-list" class="space-y-2 max-h-96 overflow-y-auto"></div></div>
                 </div>
                 <div class="lg:col-span-1">
@@ -179,11 +181,41 @@
 
         <!-- Members Tab -->
         <div id="members-tab" class="tab-content">
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-bold mb-4">Manage Members</h2>
-                <div id="members-container" class="overflow-x-auto">
-                     <table id="members-table" class="w-full"></table>
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-center">Manage Members</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Add New Member</h3>
+                        <form id="add-member-form" class="space-y-4">
+                            <div>
+                                <label for="member-name" class="block text-sm font-medium text-gray-700">Member Name</label>
+                                <input type="text" id="member-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., John Doe">
+                            </div>
+                            <div>
+                                <label for="member-email" class="block text-sm font-medium text-gray-700">Member Email</label>
+                                <input type="email" id="member-email" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., john.doe@example.com">
+                            </div>
+                            <div>
+                                <label for="joining-date" class="block text-sm font-medium text-gray-700">Joining Date</label>
+                                <input type="date" id="joining-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Add Member</button>
+                        </form>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Existing Members</h3>
+                        <div id="members-container" class="overflow-x-auto">
+                             <table id="members-table" class="w-full"></table>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4">Settings</h2>
             </div>
         </div>
     </div>
@@ -269,6 +301,80 @@
             $('#event-list').on('click', '.edit-event-btn', handleEditEventClick);
             $('#event-list').on('click', '.save-event-btn', handleSaveEventClick);
             $('#event-list').on('click', '.delete-event-btn', handleDeleteEventClick);
+            $('#monthly-log-table').on('click', '.edit-monthly-payment-btn', handleEditMonthlyPaymentClick);
+            $('#monthly-log-table').on('click', '.save-monthly-payment-btn', handleSaveMonthlyPaymentClick);
+            $('#monthly-log-table').on('click', '.delete-monthly-payment-btn', handleDeleteMonthlyPaymentClick);
+            $('#extra-log-table').on('click', '.edit-extra-payment-btn', handleEditExtraPaymentClick);
+            $('#extra-log-table').on('click', '.save-extra-payment-btn', handleSaveExtraPaymentClick);
+            $('#extra-log-table').on('click', '.delete-extra-payment-btn', handleDeleteExtraPaymentClick);
+        }
+
+        function handleEditExtraPaymentClick() {
+            const row = $(this).closest('tr');
+            row.find('td').each(function(index) {
+                if (index === 3) { // Amount Paid column
+                    const text = $(this).text();
+                    $(this).html(`<input type="text" value="${text}" class="border p-1 w-full">`);
+                }
+            });
+            row.find('.edit-extra-payment-btn').addClass('hidden');
+            row.find('.delete-extra-payment-btn').addClass('hidden');
+            row.find('.save-extra-payment-btn').removeClass('hidden');
+        }
+
+        async function handleSaveExtraPaymentClick() {
+            const row = $(this).closest('tr');
+            const index = $(this).data('index');
+            const amountPaid = parseFloat(row.find('input').eq(0).val().replace(/[^0-9.-]+/g,""));
+
+            const success = await sendAction('editExtraPayment', { index, amountPaid });
+            if (success) {
+                showModal('Success', 'Extra payment updated successfully.');
+            }
+        }
+
+        function handleDeleteExtraPaymentClick() {
+            const index = $(this).data('index');
+            showConfirmModal('Delete Extra Payment', 'Are you sure you want to delete this payment?', async () => {
+                const success = await sendAction('deleteExtraPayment', { index });
+                if (success) {
+                    showModal('Success', 'Extra payment deleted successfully.');
+                }
+            });
+        }
+
+        function handleEditMonthlyPaymentClick() {
+            const row = $(this).closest('tr');
+            row.find('td').each(function(index) {
+                if (index === 3) { // Amount Paid column
+                    const text = $(this).text();
+                    $(this).html(`<input type="text" value="${text}" class="border p-1 w-full">`);
+                }
+            });
+            row.find('.edit-monthly-payment-btn').addClass('hidden');
+            row.find('.delete-monthly-payment-btn').addClass('hidden');
+            row.find('.save-monthly-payment-btn').removeClass('hidden');
+        }
+
+        async function handleSaveMonthlyPaymentClick() {
+            const row = $(this).closest('tr');
+            const index = $(this).data('index');
+            const amountPaid = parseFloat(row.find('input').eq(0).val().replace(/[^0-9.-]+/g,""));
+
+            const success = await sendAction('editMonthlyPayment', { index, amountPaid });
+            if (success) {
+                showModal('Success', 'Monthly payment updated successfully.');
+            }
+        }
+
+        function handleDeleteMonthlyPaymentClick() {
+            const index = $(this).data('index');
+            showConfirmModal('Delete Monthly Payment', 'Are you sure you want to delete this payment?', async () => {
+                const success = await sendAction('deleteMonthlyPayment', { index });
+                if (success) {
+                    showModal('Success', 'Monthly payment deleted successfully.');
+                }
+            });
         }
 
         function handleEditEventClick() {
@@ -401,17 +507,24 @@
 
         function renderMembersTable() {
             const { members } = appData;
-            const tableData = members.map(member => {
+            const tableData = members.map((member, index) => {
+                const status = member.status || 'active';
+                const statusClass = status === 'active' ? 'text-green-500' : 'text-red-500';
+                const monthOptions = MONTH_NAMES.map(m => `<option value="${m}" ${member.deactivation_month === m ? 'selected' : ''}>${m}</option>`).join('');
+
                 return [
                     `<input type="text" value="${member.name}" class="border-none bg-transparent" readonly>`,
                     `<input type="email" value="${member.email}" class="border-none bg-transparent" readonly>`,
+                    `<span class="${statusClass}">${status}</span>`,
+                    `<select class="deactivation-month-select border p-1 rounded ${status === 'active' ? 'hidden' : ''}" data-index="${index}">${monthOptions}</select>`,
                     `<button class="edit-member-btn bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                     <button class="save-member-btn bg-green-500 text-white px-2 py-1 rounded hidden">Save</button>`
+                     <button class="save-member-btn bg-green-500 text-white px-2 py-1 rounded hidden">Save</button>
+                     <button class="toggle-status-btn bg-yellow-500 text-white px-2 py-1 rounded ml-2" data-index="${index}">${status === 'active' ? 'Deactivate' : 'Activate'}</button>`
                 ];
             });
 
             renderDataTable('members-table', [
-                { title: "Name" }, { title: "Email" }, { title: "Actions" }
+                { title: "Name" }, { title: "Email" }, { title: "Status" }, { title: "Deactivation Month" }, { title: "Actions" }
             ], tableData);
 
             $('#members-table').on('click', '.edit-member-btn', function() {
@@ -436,6 +549,19 @@
                     }
                 });
             });
+
+            $('#members-table').on('click', '.toggle-status-btn', function() {
+                const index = $(this).data('index');
+                const member = appData.members[index];
+                const newStatus = member.status === 'active' ? 'inactive' : 'active';
+                sendAction('toggleMemberStatus', { index, status: newStatus });
+            });
+
+            $('#members-table').on('change', '.deactivation-month-select', function() {
+                const index = $(this).data('index');
+                const month = $(this).val();
+                sendAction('setDeactivationMonth', { index, month });
+            });
         }
 
         function formatCurrency(amount) { /* ... unchanged ... */ }
@@ -456,19 +582,44 @@
             });
         }
 
+        function calculateProratedFee(joiningDate, monthlyFee, monthName) {
+            const joining = new Date(joiningDate);
+            const monthIndex = MONTH_NAMES.indexOf(monthName);
+            const year = today.getFullYear();
+
+            if (joining.getFullYear() !== year || joining.getMonth() !== monthIndex) {
+                return monthlyFee;
+            }
+
+            const fridays = [];
+            const d = new Date(year, monthIndex, 1);
+            while (d.getMonth() === monthIndex) {
+                if (d.getDay() === 5) { // Friday
+                    fridays.push(new Date(d));
+                }
+                d.setDate(d.getDate() + 1);
+            }
+
+            const fridaysAfterJoining = fridays.filter(friday => friday >= joining).length;
+            const pricePerFriday = monthlyFee / fridays.length;
+            return fridaysAfterJoining * pricePerFriday;
+        }
+
         function renderMemberPaymentReport(month) {
             const { members, monthlyPaymentDetails, monthlyPayments } = appData;
-            const monthDue = monthlyPayments.find(p => p.month === month)?.amount || 0;
+            const monthInfo = monthlyPayments.find(p => p.month === month);
+            const monthDue = monthInfo ? monthInfo.amount : 0;
 
             const reportData = members.map(member => {
+                const dueForMember = calculateProratedFee(member.joining_date, monthDue, month);
                 const payment = monthlyPaymentDetails.find(p => p.memberName === member.name && p.month === month);
                 const paid = payment ? payment.amountPaid : 0;
-                const remaining = monthDue - paid;
+                const remaining = dueForMember - paid;
                 let status, color;
-                if (paid >= monthDue) { status = 'Fully Paid'; color = 'bg-green-100 text-green-800'; }
+                if (paid >= dueForMember) { status = 'Fully Paid'; color = 'bg-green-100 text-green-800'; }
                 else if (paid > 0) { status = 'Partially Paid'; color = 'bg-yellow-100 text-yellow-800'; }
                 else { status = 'Pending'; color = 'bg-red-100 text-red-800'; }
-                return [member.name, formatCurrency(monthDue), formatCurrency(paid), formatCurrency(remaining), `<span class="px-2 py-1 rounded-full text-xs font-semibold ${color}">${status}</span>`];
+                return [member.name, formatCurrency(dueForMember), formatCurrency(paid), formatCurrency(remaining), `<span class="px-2 py-1 rounded-full text-xs font-semibold ${color}">${status}</span>`];
             });
 
             renderDataTable('report-table', [
@@ -478,23 +629,46 @@
 
         function renderMonthlyPaymentsTable() {
             const details = appData.monthlyPaymentDetails || [];
-            const data = details.map(p => {
+            const data = details.map((p, index) => {
                 const statusClass = p.status.startsWith('Fully') ? 'text-green-600' : p.status.startsWith('Partially') ? 'text-yellow-600' : 'text-red-600';
-                return [new Date(p.date).toLocaleDateString(), p.memberName, p.month, formatCurrency(p.amountPaid), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`, p.paidVia];
+                return [
+                    new Date(p.date).toLocaleDateString(),
+                    p.memberName,
+                    p.month,
+                    formatCurrency(p.amountPaid),
+                    formatCurrency(p.totalAmountDue),
+                    formatCurrency(p.remainingAmount),
+                    `<span class="font-semibold ${statusClass}">${p.status}</span>`,
+                    p.paidVia,
+                    `<button class="edit-monthly-payment-btn bg-blue-500 text-white px-2 py-1 rounded" data-index="${index}">Edit</button>
+                     <button class="delete-monthly-payment-btn bg-red-500 text-white px-2 py-1 rounded" data-index="${index}">Delete</button>
+                     <button class="save-monthly-payment-btn bg-green-500 text-white px-2 py-1 rounded hidden" data-index="${index}">Save</button>`
+                ];
             });
             renderDataTable('monthly-log-table', [
-                { title: "Date" }, { title: "Member" }, { title: "Month" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }, { title: "Paid Via" }
+                { title: "Date" }, { title: "Member" }, { title: "Month" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }, { title: "Paid Via" }, { title: "Actions" }
             ], data);
         }
 
         function renderExtraPaymentsTable() {
             const details = appData.extraPaymentDetails || [];
-            const data = details.map(p => {
+            const data = details.map((p, index) => {
                 const statusClass = p.status.startsWith('Fully') ? 'text-green-600' : p.status.startsWith('Partially') ? 'text-yellow-600' : 'text-red-600';
-                return [new Date(p.date).toLocaleDateString(), p.memberName, p.extraPaymentFor, formatCurrency(p.paidAmount), formatCurrency(p.totalAmountDue), formatCurrency(p.remainingAmount), `<span class="font-semibold ${statusClass}">${p.status}</span>`];
+                return [
+                    new Date(p.date).toLocaleDateString(),
+                    p.memberName,
+                    p.extraPaymentFor,
+                    formatCurrency(p.paidAmount),
+                    formatCurrency(p.totalAmountDue),
+                    formatCurrency(p.remainingAmount),
+                    `<span class="font-semibold ${statusClass}">${p.status}</span>`,
+                    `<button class="edit-extra-payment-btn bg-blue-500 text-white px-2 py-1 rounded" data-index="${index}">Edit</button>
+                     <button class="delete-extra-payment-btn bg-red-500 text-white px-2 py-1 rounded" data-index="${index}">Delete</button>
+                     <button class="save-extra-payment-btn bg-green-500 text-white px-2 py-1 rounded hidden" data-index="${index}">Save</button>`
+                ];
             });
             renderDataTable('extra-log-table', [
-                { title: "Date" }, { title: "Member" }, { title: "For" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }
+                { title: "Date" }, { title: "Member" }, { title: "For" }, { title: "Paid" }, { title: "Due" }, { title: "Remaining" }, { title: "Status" }, { title: "Actions" }
             ], data);
         }
 
@@ -560,12 +734,14 @@
             e.preventDefault();
             const nameInput = document.getElementById('member-name');
             const emailInput = document.getElementById('member-email');
+            const joiningDateInput = document.getElementById('joining-date');
             const name = nameInput.value.trim();
             const email = emailInput.value.trim();
-            if (!name || !email) { showModal('Error', 'Please enter both name and email.'); return; }
+            const joiningDate = joiningDateInput.value;
+            if (!name || !email || !joiningDate) { showModal('Error', 'Please enter name, email and joining date.'); return; }
             if (appData.members.some(m => m.name.toLowerCase() === name.toLowerCase())) { showModal('Error', 'A member with this name already exists.'); return; }
 
-            const success = await sendAction('addMember', { name, email });
+            const success = await sendAction('addMember', { name, email, joining_date: joiningDate });
             if (success) {
                 showModal('Success', `Member "${name}" added successfully.`);
                 e.target.reset();
@@ -591,7 +767,23 @@
         populateAllDropdowns = () => { const memberOptions = '<option value="">Select Member</option>' + appData.members.map(m => `<option value="${m.name}">${m.name}</option>`).join(''); document.getElementById('monthly-member-name').innerHTML = memberOptions; document.getElementById('extra-member-name').innerHTML = memberOptions; document.getElementById('extra-payment-for').innerHTML = '<option value="">Select Event</option>' + appData.extraPayments.map(e => `<option value="${e.name}">${e.name}</option>`).join(''); const monthOptions = appData.monthlyPayments.map(p => `<option value="${p.month}">${p.month}</option>`).join(''); document.getElementById('month').innerHTML = monthOptions; document.getElementById('report-month-filter').innerHTML = monthOptions; document.getElementById('report-month-filter').value = currentMonthName; };
         showModal = (title, message) => { document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = message; document.getElementById('message-modal').classList.add('active'); };
         formatCurrency = (amount) => amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
-        getPendingForMonth = (monthName) => { const { members, monthlyPaymentDetails, monthlyPayments } = appData; const monthDueAmount = monthlyPayments.find(p => p.month === monthName)?.amount || 0; const totalMonthDue = monthDueAmount * members.length; const totalMonthCollected = monthlyPaymentDetails.filter(p => p.month === monthName).reduce((sum, p) => sum + p.amountPaid, 0); return totalMonthDue - totalMonthCollected; };
+        getPendingForMonth = (monthName) => {
+            const { members, monthlyPaymentDetails, monthlyPayments } = appData;
+            const monthDueAmount = monthlyPayments.find(p => p.month === monthName)?.amount || 0;
+            const monthIndex = MONTH_NAMES.indexOf(monthName);
+
+            const activeMembersForMonth = members.filter(member => {
+                if (member.status === 'inactive') {
+                    const deactivationMonthIndex = MONTH_NAMES.indexOf(member.deactivation_month);
+                    return monthIndex < deactivationMonthIndex;
+                }
+                return true;
+            });
+
+            const totalMonthDue = monthDueAmount * activeMembersForMonth.length;
+            const totalMonthCollected = monthlyPaymentDetails.filter(p => p.month === monthName).reduce((sum, p) => sum + p.amountPaid, 0);
+            return totalMonthDue - totalMonthCollected;
+        };
         renderDashboard = () => { const { members, monthlyPaymentDetails, extraPaymentDetails, monthlyPayments, expenses } = appData; document.getElementById('total-members').textContent = members.length; const totalCollected = monthlyPaymentDetails.reduce((sum, p) => sum + p.amountPaid, 0) + extraPaymentDetails.reduce((sum, p) => sum + p.paidAmount, 0); document.getElementById('total-collected').textContent = formatCurrency(totalCollected); const totalDueOverall = monthlyPayments.slice(0, currentMonthIndex + 1).reduce((sum, p) => sum + (p.amount * members.length), 0) + extraPaymentDetails.reduce((sum, p) => sum + p.totalAmountDue, 0); const totalPending = totalDueOverall - totalCollected; document.getElementById('total-due').textContent = formatCurrency(totalPending); document.getElementById('june-pending').textContent = formatCurrency(getPendingForMonth(prevMonthName)); document.getElementById('july-pending').textContent = formatCurrency(getPendingForMonth(currentMonthName)); const currentMonthExpenses = expenses.filter(e => new Date(e.date).getMonth() === currentMonthIndex); const expensesListContainer = document.getElementById('monthly-expenses-list'); expensesListContainer.innerHTML = currentMonthExpenses.length === 0 ? '<p class="text-gray-500">No expenses recorded for this month.</p>' : currentMonthExpenses.map(e => `<div class="flex justify-between items-center bg-gray-50 p-2 rounded-md"><div><p class="font-semibold">${e.name}</p><p class="text-xs text-gray-500">${new Date(e.date).toLocaleDateString()}</p></div><p class="font-bold text-red-500">${formatCurrency(e.amount)}</p></div>`).join(''); const monthlyData = monthlyPayments.map(monthInfo => ({ month: monthInfo.month, collected: monthlyPaymentDetails.filter(p => p.month === monthInfo.month).reduce((sum, p) => sum + p.amountPaid, 0), due: monthInfo.amount * members.length })); const ctx = document.getElementById('monthly-collection-chart').getContext('2d'); if (monthlyChart) { monthlyChart.destroy(); } monthlyChart = new Chart(ctx, { type: 'bar', data: { labels: monthlyData.map(d => d.month), datasets: [{ label: 'Collected', data: monthlyData.map(d => d.collected), backgroundColor: 'rgba(75, 192, 192, 0.6)' }, { label: 'Due', data: monthlyData.map(d => d.due), backgroundColor: 'rgba(255, 99, 132, 0.6)' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } }); };
         renderMonthlyFeesAdmin = () => { document.getElementById('monthly-fees-list').innerHTML = appData.monthlyPayments.map(p => `<div class="flex items-center justify-between p-2 bg-gray-50 rounded-md"><span class="font-medium">${p.month}</span><input type="number" value="${p.amount}" data-month="${p.month}" class="w-24 p-1 border border-gray-300 rounded-md monthly-fee-input"></div>`).join(''); };
         handleUpdateAllMonthlyFees = async (e) => { e.preventDefault(); const newFees = []; document.querySelectorAll('.monthly-fee-input').forEach(input => { newFees.push({ month: input.dataset.month, amount: parseFloat(input.value) }); }); await sendAction('updateAllFees', newFees); showModal('Success', 'Monthly fees have been updated.'); };
