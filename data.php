@@ -37,7 +37,8 @@ function getInitialData() {
         'monthlyPayments' => $monthlyPayments,
         'monthlyPaymentDetails' => [],
         'extraPaymentDetails' => [],
-        'expenses' => []
+        'expenses' => [],
+        'history' => []
     ];
 }
 
@@ -79,18 +80,6 @@ if ($method === 'GET') {
             $data['members'] = array_values(array_filter($data['members'], function($member) use ($nameToRemove) {
                 return $member['name'] !== $nameToRemove;
             }));
-            $membersSaveRequired = true;
-            break;
-
-        case 'editMember':
-            $originalName = $payload['originalName'];
-            foreach ($data['members'] as &$member) {
-                if ($member['name'] === $originalName) {
-                    $member['name'] = $payload['name'];
-                    $member['email'] = $payload['email'];
-                    break;
-                }
-            }
             $membersSaveRequired = true;
             break;
 
@@ -144,31 +133,8 @@ if ($method === 'GET') {
             $saveRequired = true;
             break;
 
-        case 'editExtraPayment':
-            $index = $payload['index'];
-            if (!isset($data['history'])) {
-                $data['history'] = [];
-            }
-            $data['history'][] = $data['extraPaymentDetails'][$index];
-            $data['extraPaymentDetails'][$index]['paidAmount'] = $payload['amountPaid'];
-            $saveRequired = true;
-            break;
-
-        case 'deleteExtraPayment':
-            $index = $payload['index'];
-            if (!isset($data['history'])) {
-                $data['history'] = [];
-            }
-            $data['history'][] = $data['extraPaymentDetails'][$index];
-            array_splice($data['extraPaymentDetails'], $index, 1);
-            $saveRequired = true;
-            break;
-
         case 'editMonthlyPayment':
             $index = $payload['index'];
-            if (!isset($data['history'])) {
-                $data['history'] = [];
-            }
             $data['history'][] = $data['monthlyPaymentDetails'][$index];
             $data['monthlyPaymentDetails'][$index]['amountPaid'] = $payload['amountPaid'];
             $saveRequired = true;
@@ -176,9 +142,6 @@ if ($method === 'GET') {
 
         case 'deleteMonthlyPayment':
             $index = $payload['index'];
-            if (!isset($data['history'])) {
-                $data['history'] = [];
-            }
             $data['history'][] = $data['monthlyPaymentDetails'][$index];
             array_splice($data['monthlyPaymentDetails'], $index, 1);
             $saveRequired = true;
@@ -221,8 +184,20 @@ if ($method === 'GET') {
             $saveRequired = true;
             break;
 
-        // Add cases for other actions like addExpense, addEvent, updateAllFees etc.
-        // For brevity, a generic 'save' can handle these for now if the frontend sends the whole object
+        case 'editExtraPayment':
+            $index = $payload['index'];
+            $data['history'][] = $data['extraPaymentDetails'][$index];
+            $data['extraPaymentDetails'][$index]['paidAmount'] = $payload['amountPaid'];
+            $saveRequired = true;
+            break;
+
+        case 'deleteExtraPayment':
+            $index = $payload['index'];
+            $data['history'][] = $data['extraPaymentDetails'][$index];
+            array_splice($data['extraPaymentDetails'], $index, 1);
+            $saveRequired = true;
+            break;
+
         case 'addExpense':
             $data['expenses'][] = $payload;
             $saveRequired = true;
@@ -230,9 +205,6 @@ if ($method === 'GET') {
 
         case 'editExpense':
             $index = $payload['index'];
-            if (!isset($data['history'])) {
-                $data['history'] = [];
-            }
             $data['history'][] = $data['expenses'][$index];
             $data['expenses'][$index] = $payload['updatedExpense'];
             $saveRequired = true;
@@ -240,9 +212,6 @@ if ($method === 'GET') {
 
         case 'deleteExpense':
             $index = $payload['index'];
-            if (!isset($data['history'])) {
-                $data['history'] = [];
-            }
             $data['history'][] = $data['expenses'][$index];
             array_splice($data['expenses'], $index, 1);
             $saveRequired = true;
@@ -250,18 +219,6 @@ if ($method === 'GET') {
 
         case 'addEvent':
             $data['extraPayments'][] = $payload;
-            $saveRequired = true;
-            break;
-
-        case 'editEvent':
-            $index = $payload['index'];
-            $data['extraPayments'][$index] = $payload['event'];
-            $saveRequired = true;
-            break;
-
-        case 'deleteEvent':
-            $index = $payload['index'];
-            array_splice($data['extraPayments'], $index, 1);
             $saveRequired = true;
             break;
 
